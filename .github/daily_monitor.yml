@@ -1,0 +1,47 @@
+name: Random System Monitor
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  
+  workflow_dispatch:      # Allows you to click "Run Now" manually
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Random Gate
+        id: gate
+        run: |
+          RANDOM_NUM=$((1 + RANDOM % 7))
+          echo "Rolled a $RANDOM_NUM"
+          if [ $RANDOM_NUM -gt 5 ]; then
+            echo "Skipping today to keep it random (rolled $RANDOM_NUM)"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Proceeding with check (rolled $RANDOM_NUM)"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Make Scripts Executable
+        if: steps.gate.outputs.skip == 'false'
+        run: chmod +x disk_alert.sh ssl_checker.sh
+
+      - name: Run Disk Alert
+        if: steps.gate.outputs.skip == 'false'
+        run: ./disk_alert.sh >> daily_log.txt
+
+      - name: Run SSL Checker
+        if: steps.gate.outputs.skip == 'false'
+        run: ./ssl_checker.sh >> daily_log.txt
+
+      - name: Save and Commit Log
+        if: steps.gate.outputs.skip == 'false'
+        run: |
+          git add daily_log.txt
+          git commit -m "System Health Report: $(date)" || echo "No changes to commit"
+          git push
