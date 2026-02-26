@@ -2,8 +2,9 @@ name: Random System Monitor
 
 on:
   schedule:
-    - cron: '0 8 * * *'  
-  workflow_dispatch:      # Allows you to click "Run Now" manually
+  - cron: '0 8 * * *'
+  workflow_dispatch:
+    # Allows you to click "Run Now" manually
 
 jobs:
   health-check:
@@ -11,45 +12,44 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Random Gate
-        id: gate
-        run: |
-          RANDOM_NUM=$((1 + RANDOM % 7))
-          echo "Rolled a $RANDOM_NUM"
-          if [ $RANDOM_NUM -gt 5 ]; then
-            echo "Skipping today to keep it random (rolled $RANDOM_NUM)"
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "Proceeding with check (rolled $RANDOM_NUM)"
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+    - name: Random Gate
+      id: gate
+      run: |
+        RANDOM_NUM=$((1 + RANDOM % 7))
+        echo "Rolled a $RANDOM_NUM"
+        if [ $RANDOM_NUM -gt 5 ]; then
+          echo "Skipping today to keep it random (rolled $RANDOM_NUM)"
+          echo "skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "Proceeding with check (rolled $RANDOM_NUM)"
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
 
-      - name: Make Scripts Executable
-        if: steps.gate.outputs.skip == 'false'
-        run: chmod +x disk_alert.sh ssl_checker.sh
+    - name: Make Scripts Executable
+      if: steps.gate.outputs.skip == 'false'
+      run: chmod +x disk_alert.sh ssl_checker.sh
 
-      - name: Run Disk Alert
-        if: steps.gate.outputs.skip == 'false'
-        run: ./disk_alert.sh >> daily_log.txt
+    - name: Run Disk Alert
+      if: steps.gate.outputs.skip == 'false'
+      run: ./disk_alert.sh >> daily_log.txt
 
-      - name: Run SSL Checker
-        if: steps.gate.outputs.skip == 'false'
-        run: ./ssl_checker.sh >> daily_log.txt
+    - name: Run SSL Checker
+      if: steps.gate.outputs.skip == 'false'
+      run: ./ssl_checker.sh >> daily_log.txt
 
-      - name: Save and Commit Log
-        if: steps.gate.outputs.skip == 'false'
-        run: |
-          git config user.name "Neil-023"
-          git config user.email "neiljohn.nj23@gmail.com"
-          git add daily_log.txt
-          git commit -m "System Health Report: $(date)" || exit 0
-          
-          # 2. NOW Pull (Rebase)
-          # Since your changes are committed, Git can safely replay them on top of the remote
-          git pull --rebase origin main
-          
-          # 3. Push
-          git push origin main
+    - name: Save and Commit Log
+      if: steps.gate.outputs.skip == 'false'
+      run: |
+        git config user.name "Neil-023"
+        git config user.email "neiljohn.nj23@gmail.com"
+
+        git add -A
+        git commit -m "System Health Report: $(date)" || exit 0
+
+        # Pull safely even if something is modified
+        git pull --rebase --autostash origin main
+
+        git push origin main
