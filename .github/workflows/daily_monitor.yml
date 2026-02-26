@@ -45,6 +45,11 @@ jobs:
           git config user.name "Neil-023"
           git config user.email "neiljohn.nj23@gmail.com"
           git add daily_log.txt
-          git pull --rebase origin main
           git commit -m "System Health Report: $(date)" || exit 0
+          
+          # 2. NOW Pull (Rebase)
+          # Since your changes are committed, Git can safely replay them on top of the remote
+          git pull --rebase origin main
+          
+          # 3. Push
           git push origin main
