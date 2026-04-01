@@ -52,3 +52,5 @@
 [OK] SSL Certificate for google.com is valid for 62 more days.
 [OK] Disk space is healthy. Used: 38%
 [OK] SSL Certificate for google.com is valid for 68 more days.
+[OK] Disk space is healthy. Used: 38%
+[OK] SSL Certificate for google.com is valid for 60 more days.
